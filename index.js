@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * script to backup Cloud Datastore entities to a GCS bucket
  *
@@ -92,6 +93,19 @@ const datastoreStatusCommand = (project, options) => {
   return 'gcloud datastore operations ' + authOptions + ' list';
 };
 
+function validateFrequency (backupSchedule, frequency) {
+    if (_.isUndefined(backupSchedule[frequency])) {
+        console.log(('Frequency value (' + frequency + ') unknown!').red);
+    }
+}
+
+//global options
+program
+  .option('--account <account>', 'GCP account')
+  .option('--debug', 'Debug', false)
+  .option('--configFile <configFile>', 'Config file', 'config.json')
+  .option('--backupSchedule <backupSchedule>', 'Backup schedule', 'backup-schedule.json')
+
 /**
  * create a backup
  *
@@ -99,19 +113,15 @@ const datastoreStatusCommand = (project, options) => {
  */
 program
   .command('backup <env> <frequency>')
-  .option('--account [account]', 'GCP account')
-  .option('--debug', 'Debug', false)
-  .option('--configFile [configFile]', 'Config file', '../config.json')
-  .option('--backupSchedule [backupSchedule]', 'Backup schedule', '../backup-schedule.json')
-  .action(async (env, frequency, invocation) => {
-    const ENV_CONFIG = await loadJsonFile(invocation.configFile);
-    const BACKUP_SCHEDULE = await loadJsonFile(invocation.backupSchedule);
+  .action( async (env, frequency) => {
+    const ENV_CONFIG = await loadJsonFile(program.configFile);
+    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
 
-    validateFrequency(frequency);
+    validateFrequency(BACKUP_SCHEDULE, frequency);
 
     let options = {
-      account: invocation.account,
-      debug: invocation.debug,
+      account: program.account,
+      debug: program.debug,
     };
 
     let config = ENV_CONFIG[env];
@@ -123,7 +133,7 @@ program
       console.log(backup(BACKUP_SCHEDULE[frequency], deployment.projectId, bucket, options));
     });
 
-    console.log('Backups started; use the following commands to monitor progress:')
+    console.log('Backups started; use the following commands to monitor progress:');
     _.each(config.deployments, (deployment) => {
       console.log('\t' + datastoreStatusCommand(deployment.projectId, options));
     })
@@ -134,20 +144,20 @@ program
  */
 program
   .command('restore <env> <frequency>')
-  .option('--account [account]', 'GCP account')
   .option('--timestamp [timestamp>', 'Timestamp')
-  .option('--configFile [configFile]', 'Config file', '../config.json')
-  .action(async (env, frequency, invocation) => {
+  .action(async (env, frequency, cmdObj) => {
     console.log("*** Doesn't run anything; just generates example cmd for env ***".red);
     let options = {
-      account: invocation.account
+      account: program.account
     };
 
-    let timestamp = invocation.timestamp || '{{timestamp_of_backup}}'.cyan;
+    let timestamp = cmdObj.timestamp || '{{timestamp_of_backup}}'.cyan;
 
-    validateFrequency(frequency);
 
-    let config = await loadJsonFile(invocation.configFile);
+    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
+    validateFrequency(BACKUP_SCHEDULE, frequency);
+
+    let config = await loadJsonFile(program.configFile);
     _.each(config[env].deployments, (deployment) => {
       if (!invocation.timestamp) {
         console.log('replace ' + '{{timestamp_of_backup}}'.cyan + ' with the file you want (specific to each deployment)');
@@ -157,6 +167,7 @@ program
       console.log('\t monitor status: '.blue + datastoreStatusCommand(deployment.project, options));
     });
   });
+
 
 
 
@@ -170,16 +181,15 @@ program
  */
 program
   .command('test <env> <frequency> <projectId> <timestamp> <entityName>')
-  .option('--account [account]', 'GCP account')
-  .option('--configFile [configFile]', 'Config file', '../config.json')
-  .action(async (env, frequency, projectId, timestamp, entityName, invocation) => {
+  .action(async (env, frequency, projectId, timestamp, entityName, cmdObj) => {
     let options = {
-      account: invocation.account,
+      account: program.account,
     };
 
-    validateFrequency(frequency);
+    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
+    validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    let config = await loadJsonFile(invocation.configFile);
+    let config = await loadJsonFile(program.configFile);
     _.each(config[env].deployments, (deployment) => {
       if (deployment.project == projectId) {
         let bucket = `${deployment.backupBucketPrefix}_${frequency}`;
@@ -194,12 +204,11 @@ program
  */
 program
   .command('list <env> <frequency>')
-  .option('--account [account]', 'GCP account')
-  .option('--configFile [configFile]', 'Config file', '../config.json')
-  .action(async (env, frequency, invocation) => {
-    validateFrequency(frequency);
+  .action(async (env, frequency) => {
+    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
+    validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    let config = await loadJsonFile(invocation.configFile);
+    let config = await loadJsonFile(program.configFile);
     _.each(config[env].deployments, (deployment) => {
       let bucketPrefix = `gs://${deployment.backupBucketPrefix}-${frequency}/`;
       let files = child_process.execSync('gsutil ls ' + bucketPrefix).toString('utf8');
@@ -209,10 +218,11 @@ program
     });
   });
 
-program.parse(process.argv);
+//q: is this redirection even needed? 
+async function main() {
+    await program.parseAsync(process.argv);
+};
 
-let validateFrequency = (frequency) => {
-  if (_.isUndefined(BackupSchedule[frequency])) {
-    console.log(('Frequency value (' + frequency + ') unknown!').red);
-  }
-}
+main();
+
+
