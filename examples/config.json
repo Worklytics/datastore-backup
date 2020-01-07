@@ -1,0 +1,20 @@
+{
+  "prod": {
+    "deployments": [
+      {
+        "projectId": "id-of-production-project",
+        "backupBucketPrefix": "id-of-production-project_backup"
+      },
+      {
+        "projectId": "id-of-second-production-project",
+        "backupBucketPrefix": "id-of-second-production-project_backup"
+      }
+    ]
+  },
+  "staging": {
+    "deployments": [
+      " ... same as above .."
+    ]
+  }
+}
+
