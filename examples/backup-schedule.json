@@ -1,0 +1,15 @@
+{
+  "daily": [
+    "SomeEntityWeWantToBackupDaily"
+  ],
+  "weekly": [
+    "SomeEntityWeWantToBackupWeekly"
+  ],
+  "monthly": [
+    "SomeEntityWeWantToBackupMonthly"
+  ],
+  "quarterly": [
+    "SomeEntityWeWantToBackupQuarterly"
+  ]
+}
+
