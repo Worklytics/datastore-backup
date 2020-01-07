@@ -1,8 +1,11 @@
 {
-  "name": "backups",
+  "name": "datastore-backups",
   "version": "1.0.0",
   "description": "Script to backup Cloud Datastore --> Cloud Storage",
   "main": "index.js",
+  "bin": {
+    "datastore-backup": "./index.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
