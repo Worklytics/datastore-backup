@@ -33,84 +33,8 @@ const loadJsonFile = require('load-json-file');
 const _ = require('lodash');
 const colors = require('colors');  // @see "https://www.npmjs.com/package/colors"
 
-/**
- * create a backup of kinds from project into bucket
- *
- * @param kinds
- * @param project
- * @param bucket
- * @param options
- * @returns {string|*}
- */
-const backup = (kinds, project, bucket, options) => {
-
-  let authOptions = ' --project ' + project;
-  if (!_.isUndefined(options.account)) {
-    authOptions += '--account ' + options.account;
-  }
-
-  let command = 'gcloud datastore export ' + authOptions + ' --kinds="' + kinds.join(',') + '" --async gs://' + bucket;
-
-  if (options.debug) {
-    console.log(command.yellow);
-    return '';
-  } else {
-    return child_process.execSync(command).toString('utf8');
-  }
-};
-
-/**
- * test that we can restore a single kind from a backup
- *
- * @param kind
- * @param project
- * @param bucket
- * @param {string} timestamp eg  '2019-03-15T21:34:32_64802'
- * @param options
- * @returns {string} output from the commands
- */
-const testRestoreFromBackup = (kind, project, bucket, timestamp, options) => {
-  let restore = child_process.execSync(datastoreRestoreCommand([kind], project, bucket, timestamp, options)).toString('utf8');
-  let status = child_process.execSync(datastoreStatusCommand(project, options));
-  return restore + "\n" + status;
-};
-
-const datastoreRestoreCommand = (kinds, project, bucket, timestamp, options) => {
-  let authOptions = ' --project ' + project;
-  if (!_.isUndefined(options.account)) {
-    authOptions += '--account ' + options.account;
-  }
-  let backupMetadataFile = 'gs://' + bucket + '/' + timestamp + '/' + timestamp + '.overall_export_metadata'
-  return 'gcloud datastore import ' + authOptions + ' --kinds="' + kinds.join(',') + '" --async ' + backupMetadataFile ;
-};
-
-const datastoreStatusCommand = (project, options) => {
-  let authOptions = '';
-  if (options.account) {
-    authOptions += ' --account \' + options.account';
-  }
-  authOptions += ' --project ' + project;
-  return 'gcloud datastore operations ' + authOptions + ' list';
-};
-const validateFrequency  = (backupSchedule, frequency) => {
-  if (_.isUndefined(backupSchedule[frequency])) {
-    console.log(('Frequency value (' + frequency + ') unknown!').red);
-  }
-}
-
-const getProjectId = () => {
-  let projectId = program.projectId;
-  if (!projectId) {
-    projectId = child_process.execSync('gcloud config get-value project 2> /dev/null').toString('utf8');
-  }
-  return projectId;
-}
-
-const getBackupBucket = (projectId, frequency) => {
-  let prefix = program.bucketPrefix || `${projectId}_backup`;
-  return `${prefix}_${frequency}`;
-}
-
+const {getProjectId, getBackupBucket, validateFrequency} = require('./lib/cmd');
+const {backup, testRestoreFromBackup, datastoreRestoreCommand, datastoreStatusCommand} = require('./lib/datastore-backup');
 
 //global options
 program
@@ -139,8 +63,8 @@ program
       debug: program.debug,
     };
 
-    let projectId = getProjectId();
-    let bucket = getBackupBucket(projectId, frequency);
+    let projectId = getProjectId(program);
+    let bucket = getBackupBucket(program, projectId, frequency);
 
     //this will output diagnostic info about the backup job
     // see https://cloud.google.com/datastore/docs/export-import-entities#async-flag for more info
@@ -167,8 +91,8 @@ program
     const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
     validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    let projectId = getProjectId();
-    let bucket = getBackupBucket(projectId, frequency);
+    let projectId = getProjectId(program);
+    let bucket = getBackupBucket(program, projectId, frequency);
 
     if (!invocation.timestamp) {
       console.log('replace ' + '{{timestamp_of_backup}}'.cyan + ' with the file you want (specific to each deployment)');
@@ -196,8 +120,8 @@ program
     const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
     validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    let projectId = getProjectId();
-    let bucket = getBackupBucket(projectId, frequency);
+    let projectId = getProjectId(program);
+    let bucket = getBackupBucket(program, projectId, frequency);
 
     console.log(testRestoreFromBackup(entityName, projectId, bucket, timestamp, options));
     console.log('\t monitor status: '.blue + datastoreStatusCommand(projectId, options));
@@ -212,8 +136,8 @@ program
     const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
     validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    let projectId = getProjectId();
-    let bucket = getBackupBucket(projectId, frequency);
+    let projectId = getProjectId(program);
+    let bucket = getBackupBucket(program, projectId, frequency);
 
     let bucketPrefix = `gs://${bucket}/`;
     let files = child_process.execSync('gsutil ls ' + bucketPrefix).toString('utf8');

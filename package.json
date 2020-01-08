@@ -8,7 +8,7 @@
   },
   "scripts": {
     "datastore-backup": "node ./index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "author": "Erik Schultink <erik@worklytics.co>",
   "license": "ISC",
@@ -18,5 +18,9 @@
     "commander": "^4.1.0",
     "load-json-file": "^6.2.0",
     "lodash": "^4.17.14"
+  },
+  "devDependencies": {
+    "mocha": "^7.0.0",
+    "should": "^13.2.3"
   }
 }
