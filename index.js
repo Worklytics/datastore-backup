@@ -39,7 +39,7 @@ const {backup, testRestoreFromBackup, datastoreRestoreCommand, datastoreStatusCo
 //global options
 program
   .option('--account <account>', 'GCP account - if ommited, will infer')
-  .option('--project <project>', 'GCP project - if omitted, will infer')
+  .option('--projectId <projectId>', 'GCP project - if omitted, will infer')
   .option('--bucketPrefix <bucketPrefix>', 'prefix of bucket in which backups stored; if omitted, will default to {{project}}//this will output diagnostic info about the backup job\n' +
     '      // see https://cloud.google.com/datastore/docs/export-import-entities#async-flag for more info\n' +
     '      let bucket = `${deployment.backupBucketPrefix}_${frequency}`;')
