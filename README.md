@@ -4,8 +4,9 @@ npm script to backup/restore Google Cloud Datastore, across multiple projects
 
 ## Installation
 
+Globally, so can run from cmd line:
 ```sh
-npm install Worklytics/datastore-backup
+npm install -g Worklytics/datastore-backup
 ```
 
 ## Usage
@@ -23,6 +24,13 @@ You must define the following two configuration files in JSON, to configure GCP 
     be to put it on a cron
 
 ### Run
+
 ```sh
-npm run datastore-backup -- backup staging daily --configFile ~/config.json --backupSchedule ~/backup-schedule.json
+datastore-backup -- backup daily --backupSchedule ~/backup-schedule.json
+```
+
+From dev checkout:
+
+```
+npm run datastore-backup -- backup daily --backupSchedule ~/backup-schedule.json
 ```
