@@ -105,3 +105,6 @@ dist
 
 # IntelliJ project files
 .idea
+
+# ignore any backup-schedule config file at root of repo
+backup-schedule.json
