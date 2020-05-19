@@ -16,7 +16,7 @@
  *   4. Flush memcache
  *
  * to test backups:
- *   node index.js test daily {{project-id}} 2019-08-21T19:18:29_50232
+ *   node index.js test daily 2019-08-21T19:18:29_50232 Person
  *
  * to list available backups:
  *   node tools/backups/index.js list staging daily
@@ -48,8 +48,6 @@ program
 
 /**
  * create a backup
- *
- * idea to install this node script somewhere (data-work-1)?, and put it on a cron to backup monthly/weekly)
  */
 program
   .command('backup <frequency>')
