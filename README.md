@@ -48,9 +48,13 @@ datastore-backup list quarterly --backupSchedule ./backup-schedule.json
 ```
 
 ### Test
-Does an actual restore of just a single entity type"
+Does an actual restore of just a single entity type
 ```
 node index.js test daily 2019-08-21T19:18:29_50232 Person
 ```
 
 ### Restore
+Prints commands to use to execute full restore
+```
+node index.js restore daily 2019-08-21T19:18:29_50232
+```
