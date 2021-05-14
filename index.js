@@ -33,12 +33,13 @@ const loadJsonFile = require('load-json-file');
 const _ = require('lodash');
 const colors = require('colors');  // @see "https://www.npmjs.com/package/colors"
 
+
+
 const {getProjectId, getBackupBucket, validateFrequency} = require('./lib/cmd');
 const {backup, testRestoreFromBackup, datastoreRestoreCommand, datastoreStatusCommand} = require('./lib/datastore-backup');
 
 //global options
 program
-  .option('--account <account>', 'GCP account - if ommited, will infer')
   .option('--projectId <projectId>', 'GCP project - if omitted, will infer')
   .option('--bucketPrefix <bucketPrefix>', 'prefix of bucket in which backups stored; if omitted, will default to {{project}}//this will output diagnostic info about the backup job\n' +
     '      // see https://cloud.google.com/datastore/docs/export-import-entities#async-flag for more info\n' +
@@ -57,7 +58,6 @@ program
     validateFrequency(BACKUP_SCHEDULE, frequency);
 
     let options = {
-      account: program.account,
       debug: program.debug,
     };
 
@@ -66,10 +66,12 @@ program
 
     //this will output diagnostic info about the backup job
     // see https://cloud.google.com/datastore/docs/export-import-entities#async-flag for more info
-    console.log(backup(BACKUP_SCHEDULE[frequency], projectId, bucket, options));
 
-    console.log('Backups started; use the following commands to monitor progress:');
-    console.log('\t' + datastoreStatusCommand(projectId, options));
+
+    backup(BACKUP_SCHEDULE[frequency], projectId, bucket, options).then(([operation, apiResponse]) => {
+      console.log(`Backups started ${apiResponse.name}; use the following commands to monitor progress:`);
+      console.log('\t' + datastoreStatusCommand(projectId, options));
+    });
   });
 
 /**
