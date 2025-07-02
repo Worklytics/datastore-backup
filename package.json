@@ -1,6 +1,6 @@
 {
   "name": "datastore-backups",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Script to backup Cloud Datastore --> Cloud Storage",
   "main": "index.js",
   "bin": {
