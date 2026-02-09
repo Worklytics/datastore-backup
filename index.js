@@ -140,9 +140,10 @@ program
     let bucket = getBackupBucket(program, projectId, frequency);
 
     let bucketPrefix = `gs://${bucket}/`;
+    let escapedBucketPrefix = _.escapeRegExp(bucketPrefix);
     let files = child_process.execSync('gsutil ls ' + bucketPrefix).toString('utf8');
     files = files.replace(/\n/g, '\n\t');
-    files = files.replace(new RegExp(bucketPrefix,  'g'), '');
+    files = files.replace(new RegExp(escapedBucketPrefix, 'g'), '');
     console.log(projectId + ': \r\n\t' + files);
   });
 
