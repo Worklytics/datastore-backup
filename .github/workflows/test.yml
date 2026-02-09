@@ -1,5 +1,7 @@
 # run automated tests
 name: CI Tests
+permissions:
+  contents: read
 
 on: [push]
 
