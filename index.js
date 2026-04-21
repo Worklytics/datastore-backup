@@ -27,130 +27,127 @@
  *
  * @type {commander.CommanderStatic | commander}
  */
-const program = require('commander');
+
+const { Command } = require('commander');
+const program = new Command();
 const child_process = require('child_process');
-const loadJsonFile = require('load-json-file');
-const _ = require('lodash');
-const colors = require('colors');  // @see "https://www.npmjs.com/package/colors"
+const fs = require('fs');
+const colors = require('colors');
 
+const { getProjectId, getBackupBucket, validateFrequency } = require('./lib/cmd');
+const { backup, testRestoreFromBackup, datastoreRestoreCommand, datastoreStatusCommand } = require('./lib/datastore-backup');
 
+// custom loadJsonFile function:
+async function loadJsonFile(path) {
+  const data = await fs.promises.readFile(path, 'utf8');
+  return JSON.parse(data);
+}
 
-const {getProjectId, getBackupBucket, validateFrequency} = require('./lib/cmd');
-const {backup, testRestoreFromBackup, datastoreRestoreCommand, datastoreStatusCommand} = require('./lib/datastore-backup');
-
-//global options
+// global options
 program
   .option('--projectId <projectId>', 'GCP project - if omitted, will infer')
-  .option('--bucketPrefix <bucketPrefix>', 'prefix of bucket in which backups stored; if omitted, will default to {{project}}//this will output diagnostic info about the backup job\n' +
-    '      // see https://cloud.google.com/datastore/docs/export-import-entities#async-flag for more info\n' +
-    '      let bucket = `${deployment.backupBucketPrefix}_${frequency}`;')
+  .option('--bucketPrefix <bucketPrefix>', 'Prefix of bucket in which backups stored; if omitted, will default to {{project}}')
   .option('--debug', 'Debug', false)
-  .option('--backupSchedule <backupSchedule>', 'Backup schedule', 'backup-schedule.json')
+  .option('--backupSchedule <backupSchedule>', 'Backup schedule', 'backup-schedule.json');
 
-/**
- * create a backup
- */
+// Backup command
 program
   .command('backup <frequency>')
-  .action( async (frequency) => {
-    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
+  .action(async (frequency) => {
+    try {
+      const opts = program.opts();
+      const BACKUP_SCHEDULE = await loadJsonFile(opts.backupSchedule);
+      validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    validateFrequency(BACKUP_SCHEDULE, frequency);
+      let options = { debug: opts.debug };
+      let projectId = getProjectId(opts);
+      let bucket = getBackupBucket(opts, projectId, frequency);
 
-    let options = {
-      debug: program.debug,
-    };
-
-    let projectId = getProjectId(program);
-    let bucket = getBackupBucket(program, projectId, frequency);
-
-    //this will output diagnostic info about the backup job
-    // see https://cloud.google.com/datastore/docs/export-import-entities#async-flag for more info
-
-
-    backup(BACKUP_SCHEDULE[frequency], projectId, bucket, options).then(([operation, apiResponse]) => {
-      console.log(`Backups started ${apiResponse.name}; use the following commands to monitor progress:`);
-      console.log('\t' + datastoreStatusCommand(projectId, options));
-    });
+      backup(BACKUP_SCHEDULE[frequency], projectId, bucket, options).then(([operation, apiResponse]) => {
+        console.log(`Backups started ${apiResponse.name}; use the following commands to monitor progress:`);
+        console.log('\t' + datastoreStatusCommand(projectId, options));
+      });
+    } catch (err) {
+      console.error(colors.red('Backup failed:'), err);
+      process.exit(1);
+    }
   });
 
-/**
- * restore from backups (give example command; you must lookup the actual metadata file)
- */
+// Restore command
 program
   .command('restore <frequency>')
-  .option('--timestamp [timestamp>', 'Timestamp')
+  .option('--timestamp <timestamp>', 'Timestamp')
   .action(async (frequency, cmdObj) => {
-    console.log("*** Doesn't run anything; just generates example cmd for env ***".red);
-    let options = {
-      account: program.account
-    };
+    try {
+      const opts = program.opts();
+      console.log(colors.red("*** Doesn't run anything; just generates example cmd for env ***"));
+      let options = { account: opts.account };
+      let timestamp = cmdObj.timestamp || colors.cyan('{{timestamp_of_backup}}');
 
-    let timestamp = cmdObj.timestamp || '{{timestamp_of_backup}}'.cyan;
+      const BACKUP_SCHEDULE = await loadJsonFile(opts.backupSchedule);
+      validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
-    validateFrequency(BACKUP_SCHEDULE, frequency);
+      let projectId = getProjectId(opts);
+      let bucket = getBackupBucket(opts, projectId, frequency);
 
-    let projectId = getProjectId(program);
-    let bucket = getBackupBucket(program, projectId, frequency);
-
-    if (!invocation.timestamp) {
-      console.log('replace ' + '{{timestamp_of_backup}}'.cyan + ' with the file you want (specific to each deployment)');
+      if (!cmdObj.timestamp) {
+        console.log('replace ' + colors.cyan('{{timestamp_of_backup}}') + ' with the file you want (specific to each deployment)');
+      }
+      console.log(datastoreRestoreCommand(BACKUP_SCHEDULE[frequency], projectId, bucket, timestamp, options));
+      console.log('\t monitor status: '.blue + datastoreStatusCommand(projectId, options));
+    } catch (err) {
+      console.error(colors.red('Restore failed:'), err);
+      process.exit(1);
     }
-    console.log(datastoreRestoreCommand(BackupSchedule[frequency], projectId, bucket, timestamp, options));
-    console.log('\t monitor status: '.blue + datastoreStatusCommand(projectId, options));
   });
 
-
-/**
- * test that can recover an entity kind from a backup.
- *
- * take the timestamp from inspecting the GCS bucket, or it's in the output of the backup command
- *
- * to verify, use the monitoring status command and inspect for a "state: SUCCESSFUL" of your test
- *
- */
+// Test command
 program
   .command('test <frequency> <timestamp> <entityName>')
   .action(async (frequency, timestamp, entityName) => {
-    let options = {
-      account: program.account,
-    };
+    try {
+      const opts = program.opts();
+      let options = { account: opts.account };
 
-    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
-    validateFrequency(BACKUP_SCHEDULE, frequency);
+      const BACKUP_SCHEDULE = await loadJsonFile(opts.backupSchedule);
+      validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    let projectId = getProjectId(program);
-    let bucket = getBackupBucket(program, projectId, frequency);
+      let projectId = getProjectId(opts);
+      let bucket = getBackupBucket(opts, projectId, frequency);
 
-    console.log(testRestoreFromBackup(entityName, projectId, bucket, timestamp, options));
-    console.log('\t monitor status: '.blue + datastoreStatusCommand(projectId, options));
+      console.log(testRestoreFromBackup(entityName, projectId, bucket, timestamp, options));
+      console.log('\t monitor status: '.blue + datastoreStatusCommand(projectId, options));
+    } catch (err) {
+      console.error(colors.red('Test failed:'), err);
+      process.exit(1);
+    }
   });
 
-/**
- * list available backups in project
- */
+// List command
 program
   .command('list <frequency>')
   .action(async (frequency) => {
-    const BACKUP_SCHEDULE = await loadJsonFile(program.backupSchedule);
-    validateFrequency(BACKUP_SCHEDULE, frequency);
+    try {
+      const opts = program.opts();
+      const BACKUP_SCHEDULE = await loadJsonFile(opts.backupSchedule);
+      validateFrequency(BACKUP_SCHEDULE, frequency);
 
-    let projectId = getProjectId(program);
-    let bucket = getBackupBucket(program, projectId, frequency);
+      let projectId = getProjectId(opts);
+      let bucket = getBackupBucket(opts, projectId, frequency);
 
-    let bucketPrefix = `gs://${bucket}/`;
-    let files = child_process.execSync('gsutil ls ' + bucketPrefix).toString('utf8');
-    files = files.replace(/\n/g, '\n\t');
-    files = files.replace(new RegExp(bucketPrefix,  'g'), '');
-    console.log(projectId + ': \r\n\t' + files);
+      let bucketPrefix = `gs://${bucket}/`;
+      let files = child_process.execSync('gsutil ls ' + bucketPrefix).toString('utf8');
+      files = files.replace(/\n/g, '\n\t');
+      files = files.replace(new RegExp(bucketPrefix, 'g'), '');
+      console.log(projectId + ': \r\n\t' + files);
+    } catch (err) {
+      console.error(colors.red('List failed:'), err);
+      process.exit(1);
+    }
   });
 
-//q: is this redirection even needed?
 async function main() {
-    await program.parseAsync(process.argv);
-};
+  await program.parseAsync(process.argv);
+}
 
 main();
-
-

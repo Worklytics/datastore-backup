@@ -1,5 +1,7 @@
 # datastore-backup
-npm script to backup/restore Google Cloud Datastore, across multiple projects 
+npm script to backup/restore Google Cloud Datastore, across multiple projects. 
+
+> **Note**: This tool is designed primarily to backup a **subset of entities** by defining a schedule. If you are backing up an entire database, using [Firestore scheduled backups](https://cloud.google.com/firestore/docs/manage-data/scheduled-backups) or native export features is probably a better solution.
 
 
 ## Installation
