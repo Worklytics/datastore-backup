@@ -8,23 +8,24 @@
   },
   "scripts": {
     "datastore-backup": "node ./index.js",
-    "test": "mocha"
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "author": "Erik Schultink <erik@worklytics.co>",
-  "license": {
-    "type": "Apache-2.0",
-    "url": "https://opensource.org/licenses/apache2.0.php"
-  },
+  "license": "Apache-2.0",
   "dependencies": {
-    "@google-cloud/datastore": "^9.2.1",
-    "child_process": "^1.0.2",
+    "@google-cloud/datastore": "^10.1.0",
     "colors": "^1.4.0",
-    "commander": "^14.0.0",
-    "load-json-file": "^7.0.1",
-    "lodash": "^4.17.21"
+    "commander": "^14.0.3",
+    "lodash": "^4.18.1"
   },
   "devDependencies": {
-    "mocha": "^11.7.1",
-    "should": "^13.2.3"
+    "vitest": "^4.1.5"
+  },
+  "overrides": {
+    "protobufjs": "^7.5.5"
   }
 }

@@ -13,11 +13,11 @@ If the goal is to back up an entire database en masse, this simple Node.js scrip
 - `index.js`: The main entry point and CLI wrapper. Uses `commander` to parse arguments and define commands for backing up, restoring, auditing (`list`), and testing restores.
 - `lib/cmd.js`: Helper functions for parsing command line arguments and extracting things like Google Cloud project IDs and bucket names.
 - `lib/datastore-backup.js`: Core programmatic logic that interfaces with `@google-cloud/datastore` to execute export operations and execute validation commands via `gcloud`.
-- `test/`: Contains the test suite files (currently using Mocha + Should). Tests validate configuration parsing and command generation.
+- `test/`: Contains the test suite files (Vitest). Tests validate configuration parsing and command generation.
 - `examples/`: Example configuration files like `backup-schedule.json`.
 
 ## Technical Details
 
 - **Dependencies**: Uses `@google-cloud/datastore` for interacting with the Google Cloud Datastore API and executes some `gcloud` CLI commands via `child_process.execSync` for testing and restoration outputs.
-- **Testing**: Test suite verifies the core configuration logic but does not automatically hit live GCP endpoints unless explicitly configured.
+- **Testing**: Vitest (`npm test`) verifies the core configuration logic but does not automatically hit live GCP endpoints unless explicitly configured.
 - **CI**: There is a GitHub Actions workflow that runs standard `npm test` checks.
