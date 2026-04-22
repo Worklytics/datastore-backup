@@ -21,3 +21,6 @@ If the goal is to back up an entire database en masse, this simple Node.js scrip
 - **Dependencies**: Uses `@google-cloud/datastore` for interacting with the Google Cloud Datastore API and executes some `gcloud` CLI commands via `child_process.execSync` for testing and restoration outputs.
 - **Testing**: Vitest (`npm test`) verifies the core configuration logic but does not automatically hit live GCP endpoints unless explicitly configured.
 - **CI**: There is a GitHub Actions workflow that runs standard `npm test` checks.
+
+
+Generally, keep all dependenices up-to-date with latest; pretty simple thing, so update even if potential breaking changes; rely on agents + automated tests to catch issues.
