@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const { getProjectId, getBackupBucket, validateFrequency } = require('../lib/cmd.js');
+import { getProjectId, getBackupBucket, validateFrequency } from '../lib/cmd.js';
 
 describe('getProjectId', () => {
   it('parses from program', () => {
