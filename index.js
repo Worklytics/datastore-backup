@@ -28,14 +28,15 @@
  * @type {commander.CommanderStatic | commander}
  */
 
-const { Command } = require('commander');
-const program = new Command();
-const child_process = require('child_process');
-const fs = require('fs');
-const colors = require('colors');
+import { Command } from 'commander';
+import child_process from 'node:child_process';
+import fs from 'node:fs';
+import colors from 'colors';
 
-const { getProjectId, getBackupBucket, validateFrequency } = require('./lib/cmd');
-const { backup, testRestoreFromBackup, datastoreRestoreCommand, datastoreStatusCommand } = require('./lib/datastore-backup');
+import { getProjectId, getBackupBucket, validateFrequency } from './lib/cmd.js';
+import { backup, testRestoreFromBackup, datastoreRestoreCommand, datastoreStatusCommand } from './lib/datastore-backup.js';
+
+const program = new Command();
 
 // custom loadJsonFile function:
 async function loadJsonFile(path) {
