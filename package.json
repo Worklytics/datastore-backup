@@ -28,6 +28,7 @@
     "vitest": "^4.1.5"
   },
   "overrides": {
-    "protobufjs": "^7.6.2"
+    "protobufjs": "^7.6.2",
+    "brace-expansion": "2.1.4"
   }
 }
