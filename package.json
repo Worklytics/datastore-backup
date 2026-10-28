@@ -13,21 +13,21 @@
     "test:watch": "vitest"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12"
   },
   "author": "Erik Schultink <erik@worklytics.co>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@google-cloud/datastore": "^10.1.0",
+    "@google-cloud/datastore": "^11.3.1",
     "colors": "^1.4.0",
+    "commander": "^15.0.0",
     "load-json-file": "^7.0.1",
-    "commander": "^14.0.3",
     "lodash": "^4.18.1"
   },
   "devDependencies": {
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.5"
   },
   "overrides": {
-    "protobufjs": "^7.6.2"
+    "protobufjs": "^7.6.6"
   }
 }
